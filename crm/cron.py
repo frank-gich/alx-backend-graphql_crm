@@ -1,5 +1,6 @@
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
+from gql.transport.requests import RequestsHTTPTransport
 from datetime import datetime
 import logging
 
@@ -20,7 +21,7 @@ async def log_crm_heartbeat():
     
     # Query GraphQL endpoint to verify responsiveness
     try:
-        transport = AIOHTTPTransport(url='http://localhost:8000/graphql')
+        transport = RequestsHTTPTransport(url='http://localhost:8000/graphql')
         client = Client(transport=transport, fetch_schema_from_transport=True)
         query = gql('''
             query {
@@ -35,7 +36,7 @@ async def log_crm_heartbeat():
 async def update_low_stock():
     try:
         # Set up GraphQL client
-        transport = AIOHTTPTransport(url='http://localhost:8000/graphql')
+        transport = RequestsHTTPTransport(url='http://localhost:8000/graphql')
         client = Client(transport=transport, fetch_schema_from_transport=True)
         
         # Define the GraphQL mutation
@@ -67,10 +68,6 @@ async def update_low_stock():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(update_low_stock())
-    
-# Set up logging
-logging.basicConfig(filename='/tmp/crm_heartbeat_log.txt', level=logging.INFO, format='%(message)s')
-
 async def log_crm_heartbeat():
     # Log heartbeat message with timestamp in DD/MM/YYYY-HH:MM:SS format
     timestamp = datetime.now().strftime('%d/%m/%Y-%H:%M:%S')
