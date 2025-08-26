@@ -1,3 +1,4 @@
+import requests
 from celery import shared_task
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
