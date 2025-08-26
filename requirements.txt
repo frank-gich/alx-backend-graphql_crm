@@ -1,0 +1,7 @@
+Django>=3.2
+django-crontab>=0.7.1
+gql>=3.0.0
+aiohttp>=3.8.0
+celery>=5.2.0
+django-celery-beat>=2.2.0
+redis>=4.0.0

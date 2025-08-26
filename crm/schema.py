@@ -4,13 +4,23 @@ from graphene_django import DjangoObjectType
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from .models import Customer, Product, Order
-
-import graphene
-from graphene_django import DjangoObjectType
+from crm.models import Product
 from graphene_django.filter import DjangoFilterConnectionField
-from .models import Customer, Product, Order
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 
+import os
+from celery import Celery
+
+# Set the default Django settings module for the 'celery' program.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'crm.settings')
+
+app = Celery('crm', broker='redis://localhost:6379/0')
+
+# Load task modules from all registered Django app configs.
+app.config_from_object('django.conf:settings', namespace='CELERY')
+
+# Auto-discover tasks in all installed apps
+app.autodiscover_tasks()
 
 # --------------------
 # Types with Relay Node
@@ -252,3 +262,39 @@ class Mutation(graphene.ObjectType):
     bulk_create_customers = BulkCreateCustomers.Field()
     create_product = CreateProduct.Field()
     create_order = CreateOrder.Field()
+
+
+
+class ProductType(DjangoObjectType):
+    class Meta:
+        model = Product
+        fields = ("id", "name", "stock")
+
+class UpdateLowStockProducts(graphene.Mutation):
+    class Arguments:
+        pass
+
+    products = graphene.List(ProductType)
+    message = graphene.String()
+
+    def mutate(self, info):
+        low_stock_products = Product.objects.filter(stock__lt=10)
+        updated_products = []
+        
+        for product in low_stock_products:
+            product.stock += 10
+            product.save()
+            updated_products.append(product)
+            
+        return UpdateLowStockProducts(
+            products=updated_products,
+            message=f"Successfully updated {len(updated_products)} low stock products"
+        )
+
+class Mutation(graphene.ObjectType):
+    update_low_stock_products = UpdateLowStockProducts.Field()
+
+class Query(graphene.ObjectType):
+    hello = graphene.String(default_value="Hi!")
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
